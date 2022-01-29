@@ -15,12 +15,21 @@ import { bindProxyAndYMap } from "valtio-yjs";
 
 import "./App.css";
 import Header from "./Header";
+import faker from "faker";
 
 const ydoc = new Y.Doc();
 const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo", ydoc);
 
+// get identity from sessionStorage
+const session = window.sessionStorage;
+let identity = session.getItem("identity");
+if (!identity) {
+  identity = faker.name.findName()
+  session.setItem('identity', identity);
+}
+
 // local state is instance, shared is all instances
-const local = proxy({ generate: true });
+const local = proxy({ generate: true, identity });
 const shared = proxy({ count: 0 });
 const ymap = ydoc.getMap("system.v1");
 bindProxyAndYMap(shared, ymap);
