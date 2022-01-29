@@ -1,5 +1,13 @@
 import React from "react";
-import { Button, ButtonGroup, Card, Colors, Elevation } from "@blueprintjs/core";
+import {
+  Button,
+  ButtonGroup,
+  Card,
+  Colors,
+  Elevation,
+  Position,
+  Toaster,
+} from "@blueprintjs/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { proxy, useSnapshot } from "valtio";
@@ -15,9 +23,20 @@ const ymap = ydoc.getMap("system.v1");
 const systemMap = proxy({ count: 0 });
 bindProxyAndYMap(systemMap, ymap);
 
+
+/** Singleton toaster instance. Create separate instances for different options. */
+export const AppToaster = Toaster.create({
+  className: "recipe-toaster",
+  position: Position.TOP,
+});
+
 // interval, randomly skip counting
 setInterval(() => {
-  if (!!(Math.random() > 0.5)) systemMap.count++;
+  if (!!(Math.random() > 0.5)) {
+    console.log(`write ${Date.now()}`);
+    AppToaster.show({ message: "count", timeout: 250 });
+    systemMap.count++;
+  }
 }, 1e3);
 
 // show state
