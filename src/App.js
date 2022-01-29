@@ -1,66 +1,93 @@
+import React from "react";
+import {
+  Button,
+  ButtonGroup,
+  Card,
+  Colors,
+  Elevation,
+  Position,
+  Toaster,
+} from "@blueprintjs/core";
+import * as Y from "yjs";
+import { WebsocketProvider } from "y-websocket";
+import { proxy, useSnapshot } from "valtio";
+import { bindProxyAndYMap } from "valtio-yjs";
 
 import "./App.css";
-import { Button, Card, Colors, Elevation } from "@blueprintjs/core";
-import React from "react";
+import Header from "./Header";
 
-import Header from './Header'
+const ydoc = new Y.Doc();
+const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo", ydoc);
 
-export class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { count: 0 };
-    this.handleButtonClick = this.handleButtonClick.bind(this);
+const ymap = ydoc.getMap("system.v1");
+const systemMap = proxy({ count: 0 });
+bindProxyAndYMap(systemMap, ymap);
+
+
+/** Singleton toaster instance. Create separate instances for different options. */
+export const AppToaster = Toaster.create({
+  className: "recipe-toaster",
+  position: Position.TOP,
+});
+
+// interval, randomly skip counting
+setInterval(() => {
+  if (!!(Math.random() > 0.5)) {
+    console.log(`write ${Date.now()}`);
+    AppToaster.show({ message: "count", timeout: 250 });
+    systemMap.count++;
   }
+}, 1e3);
 
-  handleButtonClick() {
-    this.setState({
-      count: this.state.count + 1
-    });
-  }
+// show state
+const Counter = () => {
+  const snap = useSnapshot(systemMap);
+  const { count } = snap;
+  let background = count % 3 === 0 ? Colors.GREEN1 : 
+      count % 2 === 0 ? Colors.BLUE1 : Colors.RED1;
 
-  // start counting
-  componentDidMount() {
-    let that = this;
-    setInterval(() => {
-      // randomly skip counting
-      if (!!(Math.random() > 0.5)) return;
-      that.setState({
-        count: this.state.count + 1,
-      });
-    }, 1e3);
-  }
+  return (
+    <Card style={{ background }} className={`App-state`} elevation={Elevation.TWO}>
+      <pre>{count}</pre>
+    </Card>
+  );
+}
 
-  render() {
+const Clicker = () => {
+  return (
+    <Button
+      intent="primary"
+      icon="plus"
+      onClick={() => ++systemMap.count}
+      text={`Count`}
+    ></Button>
+  );
+}
 
-    let { count } = this.state;
-    let background = (count % 3 === 0) ? Colors.GREEN1:
-      (count % 2 === 0) ? Colors.BLUE1 : Colors.RED1;
+const Reset = () => {
+  return (
+    <Button
+      intent="danger"
+      icon="reset"
+      onClick={() => systemMap.count = 0 }
+      text={`Reset`}
+    ></Button>
+  );
+};
 
-    return (
-      <div className="App">
-        <Header />
-
-        <div className="App-body">
-          <Card
-            style={({ background })}
-            className={`App-state`}
-            interactive={true}
-            elevation={Elevation.TWO}
-          >
-            <pre>{JSON.stringify(this.state)}</pre>
-          </Card>
-          <div />
-          <Button
-            className="bp3-intent-primary"
-            intent="success"
-            icon="plus"
-            onClick={this.handleButtonClick}
-            text={`Count`}
-          ></Button>
-        </div>
+const App = () => {
+  return (
+    <div className="App">
+      <Header />
+      <div className="App-body">
+        <Counter />
+        <ButtonGroup>
+          <Clicker />
+          <Reset />
+        </ButtonGroup>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 export default App;
