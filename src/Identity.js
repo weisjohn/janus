@@ -1,13 +1,13 @@
 import { useSnapshot } from "valtio";
 
-import { Tag, Tooltip, Position } from "@blueprintjs/core";
+import { Tag, Position } from "@blueprintjs/core";
+import { Tooltip2 } from "@blueprintjs/popover2";
 
 import "./Identity.css";
 
-function Identity({ local, type }) {
-  const snap = useSnapshot(local);
+function Identity({ user, type }) {
 
-  const { user: { name, color }} = snap;
+  const { name, color } = user;
 
   if (type === "full") {
     return (
@@ -19,11 +19,11 @@ function Identity({ local, type }) {
 
   let initials = name.split(" ").map(s => s[0]).join("").slice(0, 2);
   return (
-    <Tooltip content={name} position={Position.DOWN}>
+    <Tooltip2 content={name} position={Position.DOWN}>
       <Tag className="identity initials" round large style={{ background: color }}>
         {initials}
       </Tag>
-    </Tooltip>
+    </Tooltip2>
   );
 }
 
