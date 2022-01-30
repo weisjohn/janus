@@ -1,6 +1,5 @@
-import { useSnapshot } from "valtio";
 
-import { Tag, Position } from "@blueprintjs/core";
+import { Tag, Position, Icon } from "@blueprintjs/core";
 import { Tooltip2 } from "@blueprintjs/popover2";
 
 import "./Identity.css";
@@ -12,6 +11,7 @@ function Identity({ user, type }) {
   if (type === "full") {
     return (
       <Tag className="identity" round large style={{ background: color }}>
+        <Icon style={{ marginRight: "10px" }} icon="person" />
         {name}
       </Tag>
     );
