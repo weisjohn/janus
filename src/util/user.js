@@ -18,7 +18,7 @@ function User() {
 
     // filter out black/white/gray from BlueprintJS colors
     const userColors = Object.keys(Colors).filter(
-      (c) => !/gray|black|white/gi.test(c)
+      (c) => !/gray|black|white|4|5/gi.test(c)
     );
 
     // turn username into a sum of all character's ASCII values
