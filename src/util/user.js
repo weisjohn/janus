@@ -32,7 +32,7 @@ function User() {
     // get hex value from Blueprint colors
     const color = Colors[userColors[colorHash]];
 
-    user = { name, color };
+    user = { name, color, uuid: crypto.randomUUID() };
     session.setItem("user", JSON.stringify(user));
   }
   return user;
