@@ -5,11 +5,10 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 
 import "@blueprintjs/core/lib/css/blueprint.css";
+import "@blueprintjs/popover2/lib/css/blueprint-popover2.css";
 
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />,
   document.getElementById('root')
 );
 

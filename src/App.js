@@ -15,14 +15,27 @@ import { bindProxyAndYMap } from "valtio-yjs";
 
 import "./App.css";
 import Header from "./Header";
+import User from "./util/user";
 
 const ydoc = new Y.Doc();
 const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo", ydoc);
+const { awareness } = websocketProvider;
 
+const user = User();
+awareness.setLocalStateField("user", user);
+
+// local state is instance, shared is all instances
+const local = proxy({ generate: false, user, roommates: [] });
+const shared = proxy({ count: 0 });
 const ymap = ydoc.getMap("system.v1");
-const systemMap = proxy({ count: 0 });
-bindProxyAndYMap(systemMap, ymap);
+bindProxyAndYMap(shared, ymap);
 
+// when an awareness event happens, update list of roommates
+awareness.on('change', () => {
+  let allStates = awareness.getStates();
+  let roommates = Array.from(allStates.entries()).map((s) => s[1].user).filter(u => u.uuid !== user.uuid);
+  local.roommates = roommates;
+});
 
 /** Singleton toaster instance. Create separate instances for different options. */
 export const AppToaster = Toaster.create({
@@ -33,15 +46,16 @@ export const AppToaster = Toaster.create({
 // interval, randomly skip counting
 setInterval(() => {
   if (!!(Math.random() > 0.5)) {
+    if (!local.generate) return;
     console.log(`write ${Date.now()}`);
     AppToaster.show({ message: "count", timeout: 250 });
-    systemMap.count++;
+    shared.count++;
   }
 }, 1e3);
 
 // show state
 const Counter = () => {
-  const snap = useSnapshot(systemMap);
+  const snap = useSnapshot(shared);
   const { count } = snap;
   let background = count % 3 === 0 ? Colors.GREEN1 : 
       count % 2 === 0 ? Colors.BLUE1 : Colors.RED1;
@@ -58,7 +72,7 @@ const Clicker = () => {
     <Button
       intent="primary"
       icon="plus"
-      onClick={() => ++systemMap.count}
+      onClick={() => ++shared.count}
       text={`Count`}
     ></Button>
   );
@@ -69,7 +83,7 @@ const Reset = () => {
     <Button
       intent="danger"
       icon="reset"
-      onClick={() => systemMap.count = 0 }
+      onClick={() => shared.count = 0 }
       text={`Reset`}
     ></Button>
   );
@@ -78,7 +92,7 @@ const Reset = () => {
 const App = () => {
   return (
     <div className="App">
-      <Header />
+      <Header local={local} />
       <div className="App-body">
         <Counter />
         <ButtonGroup>

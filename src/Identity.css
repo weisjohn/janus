@@ -1,0 +1,16 @@
+
+.identity {
+  border-radius: 1rem;
+  padding: 5px;
+  color: #FFFFFF;
+  font-weight: bold;
+  text-shadow: 2px 2px 2px rgb(0 0 0 / 50%);
+}
+
+.identity.full {
+  padding: 5px 10px;
+}
+
+.identity.initials {
+  margin-left: 10px;
+}
