@@ -101,7 +101,7 @@ const App = () => {
           <Clicker />
           <Reset />
         </ButtonGroup>
-        <Editor awareness={awareness} ytext={ytext} />
+        <Editor awareness={awareness} ytext={ytext} me={user} />
       </div>
     </div>
   );
