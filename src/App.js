@@ -15,6 +15,7 @@ import { bindProxyAndYMap } from "valtio-yjs";
 
 import "./App.css";
 import Header from "./Header";
+import Editor from "./Editor";
 import User from "./util/user";
 
 const ydoc = new Y.Doc();
@@ -28,6 +29,7 @@ awareness.setLocalStateField("user", user);
 const local = proxy({ generate: false, user, roommates: [] });
 const shared = proxy({ count: 0 });
 const ymap = ydoc.getMap("system.v1");
+const ytext = ydoc.getText("document.v1");
 bindProxyAndYMap(shared, ymap);
 
 // when an awareness event happens, update list of roommates
@@ -99,6 +101,7 @@ const App = () => {
           <Clicker />
           <Reset />
         </ButtonGroup>
+        <Editor awareness={awareness} ytext={ytext} me={user} />
       </div>
     </div>
   );
