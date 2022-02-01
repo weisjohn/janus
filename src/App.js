@@ -1,10 +1,5 @@
 import React from "react";
 import {
-  Button,
-  ButtonGroup,
-  Card,
-  Colors,
-  Elevation,
   Position,
   Toaster,
 } from "@blueprintjs/core";
@@ -27,7 +22,7 @@ awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
 const local = proxy({ generate: false, connected: null, user, roommates: [] });
-const shared = proxy({ count: 0 });
+const shared = proxy({ workspace: {} });
 const ymap = ydoc.getMap("system.v1");
 const ytext = ydoc.getText("document.v1");
 bindProxyAndYMap(shared, ymap);
@@ -68,52 +63,11 @@ setInterval(() => {
   }
 }, 1e3);
 
-// show state
-const Counter = () => {
-  const snap = useSnapshot(shared);
-  const { count } = snap;
-  let background = count % 3 === 0 ? Colors.GREEN1 : 
-      count % 2 === 0 ? Colors.BLUE1 : Colors.RED1;
-
-  return (
-    <Card style={{ background }} className={`App-state`} elevation={Elevation.TWO}>
-      <pre>{count}</pre>
-    </Card>
-  );
-}
-
-const Clicker = () => {
-  return (
-    <Button
-      intent="primary"
-      icon="plus"
-      onClick={() => ++shared.count}
-      text={`Count`}
-    ></Button>
-  );
-}
-
-const Reset = () => {
-  return (
-    <Button
-      intent="danger"
-      icon="reset"
-      onClick={() => shared.count = 0 }
-      text={`Reset`}
-    ></Button>
-  );
-};
-
 const App = () => {
   return (
     <div className="App">
       <Header local={local} provider={websocketProvider} />
       <div className="App-body">
-        <Counter />
-        <ButtonGroup>
-          <Clicker />
-          <Reset />
-        </ButtonGroup>
         <Editor awareness={awareness} ytext={ytext} me={user} />
       </div>
     </div>
