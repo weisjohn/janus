@@ -26,11 +26,16 @@ const user = User();
 awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
-const local = proxy({ generate: false, user, roommates: [] });
+const local = proxy({ generate: false, connected: false, user, roommates: [] });
 const shared = proxy({ count: 0 });
 const ymap = ydoc.getMap("system.v1");
 const ytext = ydoc.getText("document.v1");
 bindProxyAndYMap(shared, ymap);
+
+// when the websocket provider "syncs", it passes a connected state
+websocketProvider.on('sync', connected => {
+  local.connected = connected;
+});
 
 // when an awareness event happens, update list of roommates
 awareness.on('change', () => {
