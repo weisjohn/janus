@@ -99,7 +99,7 @@ const Reset = () => {
 const App = () => {
   return (
     <div className="App">
-      <Header local={local} />
+      <Header local={local} provider={websocketProvider} />
       <div className="App-body">
         <Counter />
         <ButtonGroup>

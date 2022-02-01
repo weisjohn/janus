@@ -2,15 +2,17 @@
 import {
   Navbar,
   Alignment,
-  Icon,
+  Tag,
   Button,
   ButtonGroup,
+  Position,
 } from "@blueprintjs/core";
+import { Tooltip2 } from "@blueprintjs/popover2";
 import { useSnapshot } from "valtio";
 
 import Identity from './Identity';
 
-function Header({ local }) {
+function Header({ local, provider }) {
   const snap = useSnapshot(local);
 
   const { user, roommates } = snap;
@@ -19,19 +21,24 @@ function Header({ local }) {
     <Navbar>
       <Navbar.Group align={Alignment.LEFT}>
         <Navbar.Heading>
-          <Icon icon="resolve" size="18" />
-          {" JANUS"}
+          <Tooltip2 content={"looking both directions"} position={Position.DOWN}>
+            <Tag icon="resolve" large minimal>JANUS</Tag>
+          </Tooltip2>
         </Navbar.Heading>
-        <Navbar.Divider />
-        {"looking both directions"}
         <Navbar.Divider />
         <ButtonGroup>
           <Button
-            icon={snap.generate ? "pause" : "play"}
+            icon={snap.connected ? "cell-tower" : "disable"}
+            intent={snap.connected ? "success" : "danger"}
+            outlined
             onClick={() => {
-              local.generate = !local.generate;
+              if (snap.connected) {
+                provider.disconnect();
+              } else {
+                provider.connect();
+              }
             }}
-            text={snap.generate ? "Pause" : "Generate"}
+            text={snap.connected ? "Connected" : "Disconnected"}
           />
         </ButtonGroup>
       </Navbar.Group>
