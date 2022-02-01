@@ -1,0 +1,11 @@
+
+.DataObject {
+  margin-top: 1rem;
+  text-align: left;
+  width: 100%;
+}
+
+.DataObject-json {
+  text-align: left;
+  color: black;
+}

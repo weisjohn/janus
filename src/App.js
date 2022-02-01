@@ -5,12 +5,13 @@ import {
 } from "@blueprintjs/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
-import { proxy, useSnapshot } from "valtio";
+import { proxy } from "valtio";
 import { bindProxyAndYMap } from "valtio-yjs";
 
 import "./App.css";
 import Header from "./Header";
 import Editor from "./Editor";
+import DataObject from "./DataObject";
 import User from "./util/user";
 
 const ydoc = new Y.Doc();
@@ -22,7 +23,7 @@ awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
 const local = proxy({ generate: false, connected: null, user, roommates: [] });
-const shared = proxy({ workspace: {} });
+const shared = proxy({ dataobject: {} });
 const ymap = ydoc.getMap("system.v1");
 const ytext = ydoc.getText("document.v1");
 bindProxyAndYMap(shared, ymap);
@@ -68,6 +69,7 @@ const App = () => {
     <div className="App">
       <Header local={local} provider={websocketProvider} />
       <div className="App-body">
+        <DataObject shared={shared} ymap={ymap} me={user} />
         <Editor awareness={awareness} ytext={ytext} me={user} />
       </div>
     </div>
