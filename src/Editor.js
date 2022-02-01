@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 
 import Monaco from "@monaco-editor/react";
 import { MonacoBinding } from "y-monaco";

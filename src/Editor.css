@@ -1,9 +1,9 @@
 
 .yMonacoEditor {
-  margin: 2rem;
+  margin-top: 2rem;
   border: 2px solid #CCCCCC;
-  border-radius: 2px;
-  width: 95%;
+  border-radius: 4px;
+  width: 100%;
 }
 
 /* lifted from https://github.com/yjs/y-monaco/blob/master/demo/index.html */
