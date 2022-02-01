@@ -26,23 +26,31 @@ const user = User();
 awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
-const local = proxy({ generate: false, connected: false, user, roommates: [] });
+const local = proxy({ generate: false, connected: null, user, roommates: [] });
 const shared = proxy({ count: 0 });
 const ymap = ydoc.getMap("system.v1");
 const ytext = ydoc.getText("document.v1");
 bindProxyAndYMap(shared, ymap);
 
+// when an awareness event happens, update list of roommates
+function refreshAwareness() {
+  let allStates = awareness.getStates();
+  let roommates = Array.from(allStates.entries())
+    .map((s) => s[1].user)
+    .filter((u) => u.uuid !== user.uuid);
+  local.roommates = roommates;
+  awareness.setLocalStateField("user", user);
+}
+awareness.on("change", refreshAwareness);
+
 // when the websocket provider "syncs", it passes a connected state
 websocketProvider.on('sync', connected => {
   local.connected = connected;
+  // when we resync, don't wait to get awareness states just refresh them
+  awareness.setLocalStateField("user", user);
+  refreshAwareness();
 });
 
-// when an awareness event happens, update list of roommates
-awareness.on('change', () => {
-  let allStates = awareness.getStates();
-  let roommates = Array.from(allStates.entries()).map((s) => s[1].user).filter(u => u.uuid !== user.uuid);
-  local.roommates = roommates;
-});
 
 /** Singleton toaster instance. Create separate instances for different options. */
 export const AppToaster = Toaster.create({

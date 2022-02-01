@@ -12,13 +12,5 @@
   font-size: 1rem;
   color: white;
   width: 100%;
-  padding: 2rem;
-}
-
-.App-state {
-  margin-bottom: 1rem;
-}
-
-.App-link {
-  color: #61dafb;
+  padding: 1rem 2rem;
 }

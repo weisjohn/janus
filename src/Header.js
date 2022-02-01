@@ -30,12 +30,15 @@ function Header({ local, provider }) {
           <Button
             icon={snap.connected ? "cell-tower" : "disable"}
             intent={snap.connected ? "success" : "danger"}
+            loading={snap.connected == null}
             outlined
             onClick={() => {
               if (snap.connected) {
                 provider.disconnect();
+                local.connected = null;
               } else {
                 provider.connect();
+                local.connected = null;
               }
             }}
             text={snap.connected ? "Connected" : "Disconnected"}
