@@ -1,7 +1,6 @@
 
 .yMonacoEditor {
-  margin-top: 2rem;
-  border: 2px solid #CCCCCC;
+  border: 1px solid #CCCCCC;
   border-radius: 4px;
   width: 100%;
 }
