@@ -60,6 +60,12 @@ const dataitems = proxy([]);
 const yarray = ydoc.getArray("dataitems.v3");
 bindProxyAndYArray(dataitems, yarray);
 
+// shared state for workspace
+const workspace = proxy([]);
+const yArrWorkspace = ydoc.getArray("workspace.v3");
+bindProxyAndYArray(workspace, yArrWorkspace);
+
+
 // when an awareness event happens, update list of roommates
 function refreshAwareness() {
   let allStates = awareness.getStates();
@@ -120,7 +126,7 @@ const App = () => {
         <Tab
           id="workspace"
           title="Workspace"
-          panel={<Workspace dataitems={dataitems} yarray={yarray} me={user} />}
+          panel={<Workspace workspace={workspace} yArrWorkspace={yArrWorkspace} me={user} />}
         />
         <Tab
           id="dataarray"
