@@ -1,11 +1,12 @@
 
-import { useSnapshot } from "valtio";
 
-import { Alignment, Button, ButtonGroup, Colors, Divider, Navbar } from "@blueprintjs/core";
-import "./DataArray.css";
-import faker from "faker";
-import * as Y from "yjs";
 import { useEffect, useRef } from "react";
+import { useSnapshot } from "valtio";
+import * as Y from "yjs";
+import { Alignment, Button, ButtonGroup, Navbar } from "@blueprintjs/core";
+import faker from "faker";
+
+import "./DataArray.css";
 
 function DataArray({ dataitems, yarray, me }) {
   const snap = useSnapshot(dataitems);
@@ -14,9 +15,8 @@ function DataArray({ dataitems, yarray, me }) {
 
   // undo manager - https://docs.yjs.dev/api/undo-manager
   useEffect(() => {
-    console.log('reran useeffect?')
+    console.log('useEffect new UndoManager');
     undoRef.current = new Y.UndoManager([yarray]);
-    console.log('hello?')
   }, [yarray])
 
   const Undo = () => {
