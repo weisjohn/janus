@@ -1,7 +1,9 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 
+import { Alignment, Button, Navbar } from "@blueprintjs/core";
 import Monaco from "@monaco-editor/react";
 import { MonacoBinding } from "y-monaco";
+import Text from "./util/text";
 
 import { proxy, useSnapshot } from "valtio";
 
@@ -62,8 +64,22 @@ function Editor({ awareness, ytext, me }) {
       {snap.clients.map((c) => (
         <ClientSelectonStyles key={c.uuid} {...c} />
       ))}
+      <Navbar>
+        <Navbar.Group align={Alignment.Left}>
+          <Button
+            icon="reset"
+            outlined
+            intent="primary"
+            onClick={() => {
+              ytext.delete(0, ytext.length);
+              ytext.insert(0, Text());
+            }}
+            text="Reset"
+          />
+        </Navbar.Group>
+      </Navbar>
       <Monaco
-        height="60vh"
+        height="calc(85vh - 100px)"
         defaultLanguage="markdown"
         defaultValue="# header\n\nfoobar"
         onMount={handleEditorDidMount}

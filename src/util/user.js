@@ -1,5 +1,6 @@
 import faker from "faker";
 import { Colors } from "@blueprintjs/core";
+import { v4 as uuidv4 } from "uuid";
 
 // get user identity from sessionStorage
 function User() {
@@ -34,7 +35,7 @@ function User() {
 
     let initials = name.split(" ").map(s => s[0]).join("").slice(0, 2);
 
-    user = { name, color, uuid: crypto.randomUUID(), initials };
+    user = { name, color, uuid: uuidv4(), initials };
     session.setItem("user", JSON.stringify(user));
   }
   return user;
