@@ -1,6 +1,8 @@
 
-import ReactFlow, { Background, Controls, MiniMap } from "react-flow-renderer";
+import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider } from "react-flow-renderer";
 import { Alignment, Button, ButtonGroup, Tag, Navbar } from "@blueprintjs/core";
+import { useSnapshot } from "valtio";
+import Chance from "chance";
 
 import "./Workspace.css";
 
@@ -17,19 +19,81 @@ const elements = [
   { id: "e1-2", source: "1", target: "2", type: "smoothstep", arrowHeadType: 'arrowclosed' },
 ];
 
+// use a width of 30 for our grid system
+const CUBIT = 30;
+const randomX = () => ((Math.floor(Math.random() * 20)) * CUBIT) + CUBIT;
+const randomY = () => ((Math.floor(Math.random() * 10)) * CUBIT) + CUBIT;
+const randomXY = () => ({ x: randomX(), y: randomY() });
 
-function Workspace({ awareness, ytext, me }) {
+const chance = Chance();
+const NODE_NAMES = [
+  "Retro Encabulator",
+  "Panametric Fan",
+  "Spurving Bearing",
+  "Hydrocoptic Marzelvane",
+  "Ambifacient Waneshaft",
+  "Differential Girdlespring",
+  "Graham Meter",
+  "Milford Trenions",
+];
+const NODE_TYPES = [
+  "input",
+  "default",
+  "output",
+]
+
+const randomNodeName = () => (chance.pickone(NODE_NAMES))
+
+const randomNode = (id, author) => {
+  return {
+    id,
+    type: chance.pickone(NODE_TYPES),
+    data: {
+      label: randomNodeName(),
+      created: new Date().toISOString(),
+      author,
+    },
+    position: randomXY(),
+  };
+}
+
+const AddNode = ({ workspace, me }) => {
+  return (
+    <Button outlined intent="success" icon="add"
+      onClick={() => {
+        workspace.push(randomNode(workspace.length, me.name))
+      }}
+      text={`Add`}
+    />
+  );
+};
+
+const Reset = ({ workspace }) => {
+  return (
+    <Button outlined intent="danger" icon="reset" text="Reset"
+      onClick={() => {
+        workspace.splice(0, workspace.length);
+      }}
+    />
+  )
+}
+
+
+function Workspace({ workspace, yArrWorkspace, me }) {
+
+  const snap = useSnapshot(workspace);
+
   return (
     <div className="Workspace">
       <Navbar>
         <Navbar.Group align={Alignment.Left}>
-          <Button outlined disabled intent="danger" icon="reset" text="Reset" />
+          <Reset workspace={workspace} />
           <Navbar.Divider />
           <ButtonGroup>
             <Tag large minimal>
               Node
             </Tag>
-            <Button outlined disabled intent="success" icon="insert" text="Add" />
+            <AddNode workspace={workspace} me={me} />
             <Button outlined disabled intent="warning" icon="add" text="Remove" />
           </ButtonGroup>
           <Navbar.Divider />
@@ -50,26 +114,28 @@ function Workspace({ awareness, ytext, me }) {
         </Navbar.Group>
       </Navbar>
       <div className="Workspace-flow">
-        <ReactFlow elements={elements} snapToGrid snapGrid={[30, 30]}>
-          <Background variant="dots" gap={30} size={1} />
-          <Controls />
-          <MiniMap
-            nodeStrokeColor={(n) => {
-              if (n.style?.background) return n.style.background;
-              if (n.type === "input") return "#0041d0";
-              if (n.type === "output") return "#ff0072";
-              if (n.type === "default") return "#1a192b";
+        <ReactFlowProvider>
+          <ReactFlow elements={JSON.parse(JSON.stringify(snap))} snapToGrid snapGrid={[CUBIT, CUBIT]}>
+            <Background variant="dots" gap={CUBIT} size={1} />
+            <Controls />
+            <MiniMap
+              nodeStrokeColor={(n) => {
+                if (n.style?.background) return n.style.background;
+                if (n.type === "input") return "#0041d0";
+                if (n.type === "output") return "#ff0072";
+                if (n.type === "default") return "#1a192b";
 
-              return "#eee";
-            }}
-            nodeColor={(n) => {
-              if (n.style?.background) return n.style.background;
+                return "#eee";
+              }}
+              nodeColor={(n) => {
+                if (n.style?.background) return n.style.background;
 
-              return "#fff";
-            }}
-            nodeBorderRadius={2}
-          />
-        </ReactFlow>
+                return "#fff";
+              }}
+              nodeBorderRadius={2}
+            />
+          </ReactFlow>
+        </ReactFlowProvider>
       </div>
     </div>
   );
