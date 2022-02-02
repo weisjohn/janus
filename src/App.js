@@ -16,6 +16,7 @@ import Header from "./Header";
 import Editor from "./Editor";
 import Markdown from "./Markdown";
 import DataArray from "./DataArray";
+import Workspace from "./Workspace";
 import User from "./util/user";
 
 const ydoc = new Y.Doc();
@@ -26,7 +27,7 @@ const user = User();
 awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
-const local = proxy({ generate: false, connected: null, user, roommates: [], synced: false, tab: 'editor' });
+const local = proxy({ generate: false, connected: null, user, roommates: [], synced: false, tab: 'workspace' });
 
 const shared = proxy({ dataobject: {} });
 const ymap = ydoc.getMap("system.v1");
@@ -116,6 +117,11 @@ const App = () => {
         onChange={(newTabId) => { local.tab = newTabId; }}
         selectedTabId={snap.tab}
       >
+        <Tab
+          id="workspace"
+          title="Workspace"
+          panel={<Workspace dataitems={dataitems} yarray={yarray} me={user} />}
+        />
         <Tab
           id="dataarray"
           title="DataArray"
