@@ -9,6 +9,7 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { proxy } from "valtio";
 import { bindProxyAndYArray, bindProxyAndYMap } from "valtio-yjs";
+import { throttle } from 'throttle-debounce';
 
 import "./App.css";
 import Header from "./Header";
@@ -20,24 +21,30 @@ const ydoc = new Y.Doc();
 const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo-2", ydoc);
 const { awareness } = websocketProvider;
 
-// TODO: this allows us see network sends
-// we could use https://blueprintjs.com/docs/versions/4/#core/components/spinner to visualize
-// sometimes when we get an update, if origin is set, it was from the network
-ydoc.on('update', (update, origin, doc) => {
-  console.log("origin", !!origin);
-  // console.log("origin", update, origin, doc);
-  // Y.logUpdate(update);
-})
-
 const user = User();
 awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
-const local = proxy({ generate: false, connected: null, user, roommates: [] });
+const local = proxy({ generate: false, connected: null, user, roommates: [], synced: false });
 const shared = proxy({ dataobject: {} });
 const ymap = ydoc.getMap("system.v1");
 const ytext = ydoc.getText("document.v1");
 bindProxyAndYMap(shared, ymap);
+
+// visualize comms on the network via a throttle, this is complicated
+const comms = throttle(1000, true, (origin) => {
+  if (!origin) return;
+  local.synced = false;
+  setTimeout(() => {
+    local.synced = true;
+  }, 500);
+});
+ydoc.on('update', (update, origin, doc) => {
+  // origin can be null, websockets, or monaco
+  if (!origin || (origin && origin._WS)) {
+    comms(origin);
+  }
+})
 
 // shared state for dataobjects
 const dataitems = proxy([]);
@@ -58,6 +65,7 @@ awareness.on("change", refreshAwareness);
 // when the websocket provider "syncs", it passes a connected state
 websocketProvider.on('sync', connected => {
   local.connected = connected;
+  local.synced = true;
   // when we resync, don't wait to get awareness states just refresh them
   awareness.setLocalStateField("user", user);
   refreshAwareness();
