@@ -5,26 +5,27 @@ import { Alignment, Button, ButtonGroup, Colors, Divider, Navbar } from "@bluepr
 import "./DataArray.css";
 import faker from "faker";
 import * as Y from "yjs";
+import { useEffect, useRef } from "react";
 
 function DataArray({ dataitems, yarray, me }) {
   const snap = useSnapshot(dataitems);
 
-  // TODO: this should probably be using useEffect or something, but i don't know hooks
+  const undoRef = useRef();
+
   // undo manager - https://docs.yjs.dev/api/undo-manager
-  if (!window.undoManager) {
-    window.undoManager = new Y.UndoManager([yarray]);
-    // undoManager.on("stack-item-added", (...any) => {
-    //   console.log("stack-item-added", ...any);
-    // });
-  }
+  useEffect(() => {
+    console.log('reran useeffect?')
+    undoRef.current = new Y.UndoManager([yarray]);
+    console.log('hello?')
+  }, [yarray])
 
   const Undo = () => {
     return (
       <Button
         icon="undo"
+        disabled={!undoRef.current || (undoRef.current && !undoRef.current.undoStack.length)}
         onClick={() => {
-          // TODO: don't use window
-          window.undoManager.undo();
+          undoRef.current.undo();
         }}
         text={`Undo`}
       ></Button>
@@ -35,9 +36,9 @@ function DataArray({ dataitems, yarray, me }) {
     return (
       <Button
         icon="redo"
+        disabled={!undoRef.current || (undoRef.current && !undoRef.current.redoStack.length)}
         onClick={() => {
-          // TODO: don't use window
-          window.undoManager.redo();
+          undoRef.current.redo();
         }}
         text={`Redo`}
       ></Button>
@@ -52,8 +53,13 @@ function DataArray({ dataitems, yarray, me }) {
         icon="reset"
         onClick={() => {
           // note how this is done
+          undoRef.current.clear();
+
           // we can not do dataitems = [], as it will destroy our reference
           dataitems.splice(0, dataitems.length);
+
+          // clear undo stack as well
+          setTimeout(() => { undoRef.current.clear(); }, 0);
         }}
         text={`Init`}
       ></Button>
