@@ -7,29 +7,37 @@ import {
 } from "@blueprintjs/core";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
-import { proxy } from "valtio";
+import { proxy, useSnapshot } from "valtio";
 import { bindProxyAndYArray, bindProxyAndYMap } from "valtio-yjs";
 import { throttle } from 'throttle-debounce';
 
 import "./App.css";
 import Header from "./Header";
 import Editor from "./Editor";
+import Markdown from "./Markdown";
 import DataArray from "./DataArray";
 import User from "./util/user";
 
 const ydoc = new Y.Doc();
-const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo-2", ydoc);
+const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo-3", ydoc);
 const { awareness } = websocketProvider;
 
 const user = User();
 awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
-const local = proxy({ generate: false, connected: null, user, roommates: [], synced: false });
+const local = proxy({ generate: false, connected: null, user, roommates: [], synced: false, tab: 'editor' });
+
 const shared = proxy({ dataobject: {} });
 const ymap = ydoc.getMap("system.v1");
-const ytext = ydoc.getText("document.v1");
 bindProxyAndYMap(shared, ymap);
+
+// because valtio doesn't have a bindProxyAndYText type, we have to do this
+const doc = proxy({ text: " " });
+const ytext = ydoc.getText("document.v1");
+ytext.observe(() => {
+  doc.text = ytext.toString();
+});
 
 // visualize comms on the network via a throttle, this is complicated
 const comms = throttle(1000, true, (origin) => {
@@ -98,10 +106,16 @@ setInterval(() => {
 }, 1e3);
 
 const App = () => {
+  const snap = useSnapshot(local);
+
   return (
     <div className="App">
       <Header local={local} provider={websocketProvider} />
-      <Tabs className="App-body">
+      <Tabs
+        className="App-body"
+        onChange={(newTabId) => { local.tab = newTabId; }}
+        selectedTabId={snap.tab}
+      >
         <Tab
           id="dataarray"
           title="DataArray"
@@ -111,6 +125,11 @@ const App = () => {
           id="editor"
           title="Editor"
           panel={<Editor awareness={awareness} ytext={ytext} me={user} />}
+        />
+        <Tab
+          id="Markdown"
+          title="Markdown"
+          panel={<Markdown doc={doc} />}
         />
       </Tabs>
     </div>
