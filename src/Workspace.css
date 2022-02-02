@@ -6,3 +6,7 @@
   height: 85vh;
   background: white;
 }
+
+.Workspace-flow {
+  height: calc(82vh - 2rem);
+}
