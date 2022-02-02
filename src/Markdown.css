@@ -1,0 +1,15 @@
+
+.Markdown {
+  border: 1px solid #CCCCCC;
+  border-radius: 4px;
+  width: 100%;
+  background-color: white;
+  padding: 1rem 2rem;
+}
+
+.Markdown blockquote {
+  border-left: 5px solid #CCC;
+  padding-left: 2rem;
+  margin-left: 0rem;
+  color: #666666;
+}
