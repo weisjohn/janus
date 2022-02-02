@@ -1,35 +1,30 @@
 
 import { useSnapshot } from "valtio";
 
-import { Alignment, Button, ButtonGroup, Card, Colors, Divider, Elevation, Navbar } from "@blueprintjs/core";
-import "./DataObject.css";
+import { Alignment, Button, ButtonGroup, Colors, Divider, Navbar } from "@blueprintjs/core";
+import "./DataArray.css";
 import faker from "faker";
 import * as Y from "yjs";
 
-function DataObject({ shared, ymap, me }) {
-  const snap = useSnapshot(shared);
-  const { dataobject } = shared;
+function DataArray({ dataitems, yarray, me }) {
+  const snap = useSnapshot(dataitems);
 
-  // do i need to init if it's never happened?
-  function initDataObject(dataobject) {
-    return {
-      count: (dataobject && dataobject.count) || 0,
-      items: (dataobject && dataobject.items) || [],
-    };
-  }
-
-  // TODO: make this work
+  // TODO: this should probably be using useEffect or something, but i don't know hooks
   // undo manager - https://docs.yjs.dev/api/undo-manager
-  const undoManager = new Y.UndoManager(ymap);
+  if (!window.undoManager) {
+    window.undoManager = new Y.UndoManager([yarray]);
+    // undoManager.on("stack-item-added", (...any) => {
+    //   console.log("stack-item-added", ...any);
+    // });
+  }
 
   const Undo = () => {
     return (
       <Button
         icon="undo"
-        disabled
         onClick={() => {
-          // TODO: make this work
-          undoManager.undo();
+          // TODO: don't use window
+          window.undoManager.undo();
         }}
         text={`Undo`}
       ></Button>
@@ -40,10 +35,9 @@ function DataObject({ shared, ymap, me }) {
     return (
       <Button
         icon="redo"
-        disabled
         onClick={() => {
-          // TODO: make this work
-          undoManager.redo();
+          // TODO: don't use window
+          window.undoManager.redo();
         }}
         text={`Redo`}
       ></Button>
@@ -57,34 +51,14 @@ function DataObject({ shared, ymap, me }) {
         intent="primary"
         icon="reset"
         onClick={() => {
-          shared.dataobject = initDataObject();
-          // TODO: when we init, reset the undo stack
-          // undoManager.clear();
+          // note how this is done
+          // we can not do dataitems = [], as it will destroy our reference
+          dataitems.splice(0, dataitems.length);
         }}
         text={`Init`}
       ></Button>
     );
   };
-
-  const AddCounter = () => (
-    <Button
-      outlined
-      intent="success"
-      icon="plus"
-      onClick={() => ++dataobject.count}
-      text={`Add`}
-    ></Button>
-  );
-
-  const SubtractCounter = () => (
-    <Button
-      outlined
-      intent="warning"
-      icon="minus"
-      onClick={() => --dataobject.count}
-      text={`Subtract`}
-    ></Button>
-  );
 
   const AddItem = () => {
     return (
@@ -93,9 +67,9 @@ function DataObject({ shared, ymap, me }) {
         intent="success"
         icon="add-to-artifact"
         onClick={() => {
-          dataobject.items.push({
+          dataitems.unshift({
             name: faker.commerce.productName(),
-            // uuid: crypto.randomUUID(),
+            // uuid: uuidv4(),
             created: new Date().toISOString(),
             author: me.name,
           });
@@ -112,7 +86,7 @@ function DataObject({ shared, ymap, me }) {
         intent="warning"
         icon="key-shift"
         onClick={() => {
-          dataobject.items.shift();
+          dataitems.shift();
         }}
         text={`Shift`}
       ></Button>
@@ -126,7 +100,7 @@ function DataObject({ shared, ymap, me }) {
         intent="warning"
         icon="remove"
         onClick={() => {
-          dataobject.items.pop();
+          dataitems.pop();
         }}
         text={`Pop`}
       ></Button>
@@ -134,15 +108,10 @@ function DataObject({ shared, ymap, me }) {
   };
 
   return (
-    <Card className="DataObject" elevation={Elevation.TWO}>
+    <div className="DataArray">
       <Navbar>
         <Navbar.Group align={Alignment.Left}>
           <Init />
-          <Navbar.Divider />
-          <ButtonGroup>
-            <AddCounter />
-            <SubtractCounter />
-          </ButtonGroup>
           <Navbar.Divider />
           <ButtonGroup>
             <AddItem />
@@ -157,11 +126,9 @@ function DataObject({ shared, ymap, me }) {
           </ButtonGroup>
         </Navbar.Group>
       </Navbar>
-      <pre className="DataObject-json">
-        {JSON.stringify(snap.dataobject, null, 4)}
-      </pre>
-    </Card>
+      <pre className="DataArray-json">{JSON.stringify(snap, null, 4)}</pre>
+    </div>
   );
 }
 
-export default DataObject;
+export default DataArray;

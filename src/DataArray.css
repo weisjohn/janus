@@ -1,0 +1,15 @@
+
+.DataArray {
+  text-align: left;
+  width: 100%;
+  background: white;
+  border: 1px solid #CCCCCC;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.DataArray-json {
+  text-align: left;
+  color: black;
+  padding-left: 1rem;
+}
