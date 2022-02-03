@@ -5,6 +5,7 @@ import { Alignment, Button, ButtonGroup, Colors, Icon, Navbar } from "@blueprint
 import { proxy, useSnapshot } from "valtio";
 import Chance from "chance";
 import { v4 as uuidv4 } from "uuid";
+import cloneDeep from "lodash.clonedeep";
 
 import "./Workspace.css";
 
@@ -13,8 +14,8 @@ const chance = Chance();
 // use a width of 30 for our grid system
 const CUBIT = 30;
 const typeYGrid = {
-  input: {   min: 1,  max: 5 },
-  default: { min: 6,  max: 15 },
+  input: {   min: 1,  max: 4 },
+  default: { min: 6,  max: 14 },
   output: {  min: 16, max: 20 },
 }
 const randomX = () => chance.integer({ min: 1, max: 20 }) * CUBIT;
@@ -41,7 +42,6 @@ const randomNodeName = () => (chance.pickone(NODE_NAMES))
 
 const NODE_TYPES = [ "input", "default", "output"]
 const NODE_TYPES_WEIGHTS = [ 1, 3, 1 ];
-
 
 const randomNode = (author) => {
   // choose default 3 out of 5 times, input|output 1 out of 5 times
@@ -105,11 +105,12 @@ const randomEdge = (workspace, author) => {
 }
 
 // add a random node to the design
-const AddNode = ({ workspace, me }) => {
+const AddNode = ({ workspace, me, flowRef }) => {
   return (
     <Button outlined intent="success" icon="add"
       onClick={() => {
-        workspace.push(randomNode(me.name))
+        workspace.push(randomNode(me.name));
+        setTimeout(flowRef.current.fitView, 10)
       }}
       text={`Add Node`}
     />
@@ -130,11 +131,14 @@ const AddEdge = ({ workspace, me }) => {
   );
 };
 
-const Reset = ({ workspace }) => {
+const Reset = ({ workspace, flowRef }) => {
   return (
     <Button outlined intent="danger" icon="trash" text="Reset"
       onClick={() => {
         workspace.splice(0, workspace.length);
+        setTimeout(() => {
+          flowRef.current.setTransform({ x: 0, y: 0, zoom: 1.0 });
+        }, 10);
       }}
     />
   )
@@ -162,7 +166,7 @@ const Genie = ({ workspace, me, flowRef }) => {
           if (edge) workspace.push(edge);
         }
         // zoom in
-        setTimeout(flowRef.current.fitView, 250);
+        setTimeout(flowRef.current.fitView, 10);
       }}
     >
       <Icon color={ Colors.VIOLET1 } icon="clean" style={{ marginRight: "5px" }} />
@@ -186,8 +190,21 @@ function Workspace({ workspace, yArrWorkspace, me }) {
   }
 
 
-  // TODO: handle onElementClick
-  // receive awareness 
+
+  // when double clicking an element, change its name
+  const onNodeDoubleClick = (e, elem) => {
+    // create a new copy of the element, as react-flow needs it
+    const changed = cloneDeep(elem);
+
+    // change the label just to show it being updated
+    changed.data.label = randomNodeName();
+
+    // find the index of the item to splice into
+    let idx = workspace.findIndex((item) => item.id === elem.id);
+
+    // replace that thing in the graph
+    workspace.splice(idx, 1, changed);
+  }
 
   // handle connection made
   const createConnection = (params) => {
@@ -243,10 +260,10 @@ function Workspace({ workspace, yArrWorkspace, me }) {
     <div className="Workspace">
       <Navbar className="Workspace-navbar">
         <Navbar.Group align={Alignment.Left}>
-          <Reset workspace={workspace} />
+          <Reset workspace={workspace} flowRef={flowRef} />
           <Navbar.Divider />
           <ButtonGroup>
-            <AddNode workspace={workspace} me={me} />
+            <AddNode workspace={workspace} me={me} flowRef={flowRef} />
             <AddEdge workspace={workspace} me={me} />
           </ButtonGroup>
           <Navbar.Divider />
@@ -275,6 +292,7 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             onConnect={createConnection}
             onNodeDrag={onNodeDragger()}
             onNodeDragStop={onNodeDragger()}
+            onNodeDoubleClick={onNodeDoubleClick}
             onElementsRemove={onElementsRemove}
             onEdgeUpdate={onEdgeUpdate}
             onLoad={onLoad}
