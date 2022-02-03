@@ -13,9 +13,9 @@ const chance = Chance();
 // use a width of 30 for our grid system
 const CUBIT = 30;
 const typeYGrid = {
-  input: {   min: 1,  max: 6 },
-  default: { min: 6,  max: 14 },
-  output: {  min: 14, max: 20 },
+  input: {   min: 1,  max: 5 },
+  default: { min: 6,  max: 15 },
+  output: {  min: 16, max: 20 },
 }
 const randomX = () => chance.integer({ min: 1, max: 20 }) * CUBIT;
 const randomY = (type) => chance.integer({ min: typeYGrid[type].min, max: typeYGrid[type].max }) * CUBIT;
