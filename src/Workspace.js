@@ -1,7 +1,7 @@
 
 import { useRef } from "react";
 import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider } from "react-flow-renderer";
-import { Alignment, Button, ButtonGroup, Tag, Navbar } from "@blueprintjs/core";
+import { Alignment, Button, ButtonGroup, Colors, Icon, Navbar } from "@blueprintjs/core";
 import { proxy, useSnapshot } from "valtio";
 import Chance from "chance";
 import { v4 as uuidv4 } from "uuid";
@@ -129,6 +129,37 @@ const Reset = ({ workspace }) => {
   )
 }
 
+const Genie = ({ workspace, me, flowRef }) => {
+  return (
+    <Button
+      outlined
+      style={{
+        borderColor: Colors.VIOLET1,
+        color: Colors.VIOLET1,
+        paddingLeft: "1rem"
+      }}
+      onClick={() => {
+        // add n random nodes
+        const nodes = chance.integer({ min: 3, max: 8 });
+        for (var i = 0; i < nodes; i++) {
+          workspace.push(randomNode(me.name))
+        }
+        // add m random edges
+        const edges = chance.integer({ min: 3, max: 8 });
+        for (var i = 0; i < nodes; i++) {
+          workspace.push(randomEdge(workspace, me));
+        }
+        // zoom in
+        setTimeout(flowRef.current.fitView, 250);
+      }}
+    >
+      <Icon color={ Colors.VIOLET1 } icon="clean" style={{ marginRight: "5px" }} />
+      {"Genie"}
+    </Button>
+  );
+}
+
+
 // use this as a state things
 const local = proxy({ element: null });
 
@@ -147,7 +178,7 @@ function Workspace({ workspace, yArrWorkspace, me }) {
   // receive awareness 
 
   // handle connection made
-  const onConnect = (params) => {
+  const createConnection = (params) => {
     workspace.push({ 
       id: uuidv4(),
       source: params.source,
@@ -157,15 +188,18 @@ function Workspace({ workspace, yArrWorkspace, me }) {
     });
   };
 
-  // remove elements
-  const onElementsRemove = (elements) => {
+  // remove element
+  const removeElement = (elem) => {
     // note how we have to do this, we can't re-assign the workspace
-    elements.forEach((elem) => {
-      // find the index of each item to remove
-      let idx = workspace.findIndex((item) => item.id === elem.id);
-      // splice it out of the array
-      workspace.splice(idx, 1);
-    });
+    // find the index of each item to remove
+    let idx = workspace.findIndex((item) => item.id === elem.id);
+    // splice it out of the array
+    workspace.splice(idx, 1);
+  };
+
+  // handles removing multiple items from tool
+  const onElementsRemove = (elements) => {
+    elements.forEach(removeElement);
   }
 
   // function generator to allow nodes to be moved
@@ -177,6 +211,12 @@ function Workspace({ workspace, yArrWorkspace, me }) {
         }
       })
     }
+  }
+
+  // simple composition of two helpers
+  const onEdgeUpdate = (oldEdge, newConnection) => {
+    removeElement(oldEdge);
+    createConnection(newConnection);
   }
 
   // TODO: determine if we can live valtio or if we need to bother w/ hooks
@@ -198,6 +238,7 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             <AddEdge workspace={workspace} me={me} />
           </ButtonGroup>
           <Navbar.Divider />
+          <Genie workspace={workspace} me={me} flowRef={flowRef} />
         </Navbar.Group>
         <Navbar.Group align={Alignment.RIGHT}>
           <ButtonGroup>
@@ -219,10 +260,11 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             elements={snap}
             snapToGrid
             snapGrid={[CUBIT, CUBIT]}
-            onConnect={onConnect}
+            onConnect={createConnection}
             onNodeDrag={onNodeDragger()}
             onNodeDragStop={onNodeDragger()}
             onElementsRemove={onElementsRemove}
+            onEdgeUpdate={onEdgeUpdate}
             onLoad={onLoad}
           >
             <Background variant="dots" gap={CUBIT} size={1} />
