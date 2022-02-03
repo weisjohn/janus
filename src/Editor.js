@@ -74,7 +74,7 @@ function Editor({ awareness, ytext, me }) {
               ytext.delete(0, ytext.length);
               ytext.insert(0, Text());
             }}
-            text="Reset"
+            text="Init"
           />
         </Navbar.Group>
       </Navbar>
