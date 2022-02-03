@@ -45,12 +45,12 @@ function DataArray({ dataitems, yarray, me }) {
     );
   };
 
-  const Init = () => {
+  const Reset = () => {
     return (
       <Button
         outlined
-        intent="primary"
-        icon="reset"
+        intent="danger"
+        icon="trash"
         onClick={() => {
           // note how this is done
           undoRef.current.clear();
@@ -61,7 +61,7 @@ function DataArray({ dataitems, yarray, me }) {
           // clear undo stack as well
           setTimeout(() => { undoRef.current.clear(); }, 0);
         }}
-        text={`Init`}
+        text={`Reset`}
       ></Button>
     );
   };
@@ -136,7 +136,7 @@ function DataArray({ dataitems, yarray, me }) {
     <div className="DataArray">
       <Navbar>
         <Navbar.Group align={Alignment.Left}>
-          <Init />
+          <Reset />
           <Navbar.Divider />
           <ButtonGroup>
             <Push />
