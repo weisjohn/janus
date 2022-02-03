@@ -1,4 +1,5 @@
 
+import { useRef } from "react";
 import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider } from "react-flow-renderer";
 import { Alignment, Button, ButtonGroup, Tag, Navbar } from "@blueprintjs/core";
 import { proxy, useSnapshot } from "valtio";
@@ -135,6 +136,13 @@ function Workspace({ workspace, yArrWorkspace, me }) {
 
   const snap = useSnapshot(workspace);
 
+  // https://reactflow.dev/docs/api/react-flow-instance/
+  const flowRef = useRef(null);
+  const onLoad = (reactFlowInstance) => {
+    flowRef.current = reactFlowInstance;
+  }
+
+
   // TODO: handle onElementClick
   // receive awareness 
 
@@ -193,9 +201,15 @@ function Workspace({ workspace, yArrWorkspace, me }) {
         </Navbar.Group>
         <Navbar.Group align={Alignment.RIGHT}>
           <ButtonGroup>
-            <Button outlined disabled icon="zoom-in" />
-            <Button outlined disabled icon="zoom-out" />
-            <Button outlined disabled icon="zoom-to-fit" />
+            <Button outlined onClick={() => {
+              flowRef.current.zoomIn();
+            }} icon="zoom-in" />
+            <Button outlined onClick={() => {
+              flowRef.current.zoomOut();
+            }} icon="zoom-out" />
+            <Button outlined onClick={() => {
+              flowRef.current.fitView();
+            }} icon="zoom-to-fit" />
           </ButtonGroup>
         </Navbar.Group>
       </Navbar>
@@ -209,6 +223,7 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             onNodeDrag={onNodeDragger()}
             onNodeDragStop={onNodeDragger()}
             onElementsRemove={onElementsRemove}
+            onLoad={onLoad}
           >
             <Background variant="dots" gap={CUBIT} size={1} />
             <Controls />
