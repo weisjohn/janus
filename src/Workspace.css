@@ -7,6 +7,10 @@
   background: white;
 }
 
+.Workspace-navbar {
+  user-select: none;
+}
+
 .Workspace-flow {
   height: calc(82vh - 2rem);
 }
