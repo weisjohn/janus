@@ -20,7 +20,7 @@ import Workspace from "./Workspace";
 import User from "./util/user";
 
 const ydoc = new Y.Doc();
-const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo-3", ydoc);
+const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo-4", ydoc);
 const { awareness } = websocketProvider;
 
 const user = User();
