@@ -8,13 +8,18 @@ import { v4 as uuidv4 } from "uuid";
 
 import "./Workspace.css";
 
+const chance = Chance();
+
 // use a width of 30 for our grid system
 const CUBIT = 30;
-const randomX = () => ((Math.floor(Math.random() * 20)) * CUBIT) + CUBIT;
-const randomY = () => ((Math.floor(Math.random() * 20)) * CUBIT) + CUBIT;
-const randomXY = () => ({ x: randomX(), y: randomY() });
-
-const chance = Chance();
+const typeYGrid = {
+  input: {   min: 1,  max: 6 },
+  default: { min: 6,  max: 14 },
+  output: {  min: 14, max: 20 },
+}
+const randomX = () => chance.integer({ min: 1, max: 20 }) * CUBIT;
+const randomY = (type) => chance.integer({ min: typeYGrid[type].min, max: typeYGrid[type].max }) * CUBIT;
+const randomXY = (type) => ({ x: randomX(), y: randomY(type) });
 
 // ifyky
 const NODE_NAMES = [
@@ -32,23 +37,25 @@ const NODE_NAMES = [
   "O-Deltoid Winding",
   "Reciprocation Arm",
 ];
+const randomNodeName = () => (chance.pickone(NODE_NAMES))
 
-// choose default 3 out of 5 times, input|output 1 out of 5 times
 const NODE_TYPES = [ "input", "default", "output"]
 const NODE_TYPES_WEIGHTS = [ 1, 3, 1 ];
 
-const randomNodeName = () => (chance.pickone(NODE_NAMES))
 
 const randomNode = (author) => {
+  // choose default 3 out of 5 times, input|output 1 out of 5 times
+  const type = chance.weighted(NODE_TYPES, NODE_TYPES_WEIGHTS);
+
   return {
     id: uuidv4(), // NOTE: the ids must be strings
-    type: chance.weighted(NODE_TYPES, NODE_TYPES_WEIGHTS),
+    type,
     data: {
       label: randomNodeName(),
       created: new Date().toISOString(),
       author,
     },
-    position: randomXY(),
+    position: randomXY(type),
   };
 }
 
@@ -82,6 +89,9 @@ const randomEdge = (workspace, author) => {
     // we don't want an edge if it already exists
     .filter(perm => !edges.find((e) => e.source === perm.source && e.target === perm.target))
 
+  // if there's no available edges, bail
+  if (!permutations.length) return;
+
   // the lucky edge to insert
   const edge = chance.pickone(permutations);
 
@@ -112,7 +122,8 @@ const AddEdge = ({ workspace, me }) => {
     <Button outlined intent="primary" icon="new-link"
       onClick={() => {
         // is this the most fun part of the algorithm
-        workspace.push(randomEdge(workspace, me));
+        const edge = randomEdge(workspace, me);
+        if (edge) workspace.push(edge);
       }}
       text={`Add Edge`}
     />
@@ -140,14 +151,15 @@ const Genie = ({ workspace, me, flowRef }) => {
       }}
       onClick={() => {
         // add n random nodes
-        const nodes = chance.integer({ min: 3, max: 8 });
+        const nodes = chance.integer({ min: 3, max: 6 });
         for (var i = 0; i < nodes; i++) {
           workspace.push(randomNode(me.name))
         }
         // add m random edges
         const edges = chance.integer({ min: 3, max: 8 });
         for (var i = 0; i < nodes; i++) {
-          workspace.push(randomEdge(workspace, me));
+          const edge = randomEdge(workspace, me);
+          if (edge) workspace.push(edge);
         }
         // zoom in
         setTimeout(flowRef.current.fitView, 250);
