@@ -74,35 +74,43 @@ const randomNode = (author) => {
   };
 }
 
-// a function with glorious purpose
-const randomEdge = (workspace, author) => {
+// calculate all possible edges - a function with glorious purpose
+const permuteEdges = (workspace) => {
   const filterWorkspace = (type) => {
-    return workspace.filter((e) => e.type === type).map((e) => e.id)
-  }
+    return workspace.filter((e) => e.type === type).map((e) => e.id);
+  };
   // generate the set of all possible edges,
   // taking into consideration react-flow's default types
   const inputs = filterWorkspace("input");
   const defaults = filterWorkspace("default");
   const outputs = filterWorkspace("output");
-  
+
   // get all edges
   const edges = workspace.filter((e) => !!e.source && !!e.target);
-  
+
   //  - sources can be either inputs or default
   const sources = inputs.concat(defaults);
   //  - targets can either be defaults or outputs
   const targets = defaults.concat(outputs);
 
   // generate all possible edges
-  const permutations = sources.map(source => {
-    return targets.map(target => ({ source, target }) );
-  })
+  return sources
+    .map((source) => {
+      return targets.map((target) => ({ source, target }));
+    })
     // flatten out the array
     .flat()
     // an edge can not have the same source and destination
-    .filter(perm => perm.source !== perm.target)
+    .filter((perm) => perm.source !== perm.target)
     // we don't want an edge if it already exists
-    .filter(perm => !edges.find((e) => e.source === perm.source && e.target === perm.target))
+    .filter(
+      (perm) =>
+        !edges.find((e) => e.source === perm.source && e.target === perm.target)
+    );
+}
+
+
+const randomEdge = (permutations, author) => {
 
   // if there's no available edges, bail
   if (!permutations.length) return;
@@ -138,12 +146,12 @@ const AddNode = ({ workspace, me }) => {
 
 // add a random edge to the design
 const AddEdge = ({ workspace, me }) => {
+  const possibleEdges = permuteEdges(workspace);
   return (
     <Button outlined intent="primary" icon="new-link"
+      disabled={ !possibleEdges.length }
       onClick={() => {
-        // is this the most fun part of the algorithm
-        const edge = randomEdge(workspace, me);
-        if (edge) workspace.push(edge);
+        workspace.push(randomEdge(possibleEdges, me));
       }}
       text={`Edge`}
     />
@@ -198,8 +206,9 @@ const Genie = ({ workspace, me }) => {
         // add m random edges
         const edges = chance.integer({ min: 1, max: nodes });
         for (var j = 0; j < edges; j++) {
-          const edge = randomEdge(workspace, me);
-          if (edge) workspace.push(edge);
+          const possibleEdges = permuteEdges(workspace);
+          if (!possibleEdges.length) break;
+          workspace.push(randomEdge(possibleEdges, me));
         }
         // zoom to fit
         setTimeout(() => {
