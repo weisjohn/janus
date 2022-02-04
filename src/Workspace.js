@@ -1,6 +1,6 @@
 
 import { useRef } from "react";
-import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider } from "react-flow-renderer";
+import ReactFlow, { Background, MiniMap, ReactFlowProvider, useZoomPanHelper } from "react-flow-renderer";
 import { Alignment, Button, ButtonGroup, Colors, Icon, Navbar } from "@blueprintjs/core";
 import { proxy, useSnapshot } from "valtio";
 import Chance from "chance";
@@ -109,13 +109,14 @@ const randomEdge = (workspace, author) => {
 }
 
 // add a random node to the design
-const AddNode = ({ workspace, me, flowRef }) => {
+const AddNode = ({ workspace, me }) => {
+  const { fitView } = useZoomPanHelper();
   return (
     <Button outlined intent="success" icon="add"
       onClick={() => {
         workspace.push(randomNode(me.name));
         setTimeout(() => {
-          flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
+          fitView({ duration: FLOW_VIEW_ANIMATION });
         }, 10)
       }}
       text={`Add Node`}
@@ -137,12 +138,19 @@ const AddEdge = ({ workspace, me }) => {
   );
 };
 
+// TODO: remove flowRef when https://github.com/wbkd/react-flow/pull/1884 is merged
 const Reset = ({ workspace, flowRef }) => {
+  // TODO: use transform useZoomPanHelper when https://github.com/wbkd/react-flow/pull/1884
+  // const { transform } = useZoomPanHelper();
   return (
     <Button outlined intent="danger" icon="trash" text="Reset"
       onClick={() => {
         workspace.splice(0, workspace.length);
         setTimeout(() => {
+          // TODO: according to https://github.com/wbkd/react-flow/releases/tag/9.7.0, this should work
+          // TODO: use transform useZoomPanHelper when https://github.com/wbkd/react-flow/pull/1884
+          // transform({ x: 0, y: 0, zoom: 1.0 }, FLOW_VIEW_ANIMATION);
+
           // get current view window to tween from
           const { position: [x, y], zoom } = flowRef.current.toObject();
 
@@ -153,14 +161,14 @@ const Reset = ({ workspace, flowRef }) => {
             onUpdate: ({ x, y, zoom }) => flowRef.current.setTransform({ x, y, zoom }),
             duration: FLOW_VIEW_ANIMATION
           });
-
-        }, 10);
+        }, 20);
       }}
     />
   )
 }
 
-const Genie = ({ workspace, me, flowRef }) => {
+const Genie = ({ workspace, me }) => {
+  const { fitView } = useZoomPanHelper();
   return (
     <Button
       outlined
@@ -183,7 +191,7 @@ const Genie = ({ workspace, me, flowRef }) => {
         }
         // zoom to fit
         setTimeout(() => {
-          flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
+          fitView({ duration: FLOW_VIEW_ANIMATION });
         }, 10);
       }}
     >
@@ -193,27 +201,44 @@ const Genie = ({ workspace, me, flowRef }) => {
   );
 }
 
-const Zoom = ({ icon, amount, flowRef }) => {
+const ZoomIn = () => {
+  const { zoomIn } = useZoomPanHelper();
   return (
     <Button
       outlined
+      icon="zoom-in"
       onClick={() => {
-        // get current zoom to tween from
-        const { zoom } = flowRef.current.toObject();
-
-        // https://popmotion.io/
-        animate({
-          from: zoom ,
-          to: zoom * amount,
-          onUpdate: (nextZoom) => { flowRef.current.zoomTo(nextZoom); },
-          duration: FLOW_VIEW_ANIMATION
-        });
+        zoomIn(FLOW_VIEW_ANIMATION)
       }}
-      icon={icon}
     />
   );
 }
 
+const ZoomOut = () => {
+  const { zoomOut } = useZoomPanHelper();
+  return (
+    <Button
+      outlined
+      icon="zoom-out"
+      onClick={() => {
+        zoomOut(FLOW_VIEW_ANIMATION)
+      }}
+    />
+  );
+}
+
+const ZoomToFit = () => {
+  const { fitView } = useZoomPanHelper();
+  return (
+    <Button
+      outlined
+      icon="zoom-to-fit"
+      onClick={() => {
+        fitView({ duration: FLOW_VIEW_ANIMATION });
+      }}
+    />
+  );
+}
 
 // use this as a state things
 const local = proxy({ element: null });
@@ -227,6 +252,12 @@ function Workspace({ workspace, yArrWorkspace, me }) {
   const onLoad = (reactFlowInstance) => {
     flowRef.current = reactFlowInstance;
   }
+
+  // mark awareness on an item
+  const onElementClick = (e, elem) => {
+    // TODO: mark that element as being focused by someone
+    // debugger;
+  };
 
   // when double clicking an element, change its name
   const onNodeDoubleClick = (e, elem) => {
@@ -287,29 +318,27 @@ function Workspace({ workspace, yArrWorkspace, me }) {
 
   return (
     <div className="Workspace">
-      <Navbar className="Workspace-navbar">
-        <Navbar.Group align={Alignment.Left}>
-          <Reset workspace={workspace} flowRef={flowRef} />
-          <Navbar.Divider />
-          <ButtonGroup>
-            <AddNode workspace={workspace} me={me} flowRef={flowRef} />
-            <AddEdge workspace={workspace} me={me} />
-          </ButtonGroup>
-          <Navbar.Divider />
-          <Genie workspace={workspace} me={me} flowRef={flowRef} />
-        </Navbar.Group>
-        <Navbar.Group align={Alignment.RIGHT}>
-          <ButtonGroup>
-            <Zoom icon="zoom-in" amount={1.2} flowRef={flowRef} />
-            <Zoom icon="zoom-out" amount={1 / 1.2} flowRef={flowRef} />
-            <Button outlined onClick={() => {
-              flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
-            }} icon="zoom-to-fit" />
-          </ButtonGroup>
-        </Navbar.Group>
-      </Navbar>
-      <div className="Workspace-flow">
-        <ReactFlowProvider>
+      <ReactFlowProvider>
+        <Navbar className="Workspace-navbar">
+          <Navbar.Group align={Alignment.Left}>
+            <Reset workspace={workspace} flowRef={flowRef} />
+            <Navbar.Divider />
+            <ButtonGroup>
+              <AddNode workspace={workspace} me={me} />
+              <AddEdge workspace={workspace} me={me} />
+            </ButtonGroup>
+            <Navbar.Divider />
+            <Genie workspace={workspace} me={me} />
+          </Navbar.Group>
+          <Navbar.Group align={Alignment.RIGHT}>
+            <ButtonGroup>
+              <ZoomIn />
+              <ZoomOut />
+              <ZoomToFit />
+            </ButtonGroup>
+          </Navbar.Group>
+        </Navbar>
+        <div className="Workspace-flow">
           <ReactFlow
             elements={snap}
             snapToGrid
@@ -317,13 +346,13 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             onConnect={createConnection}
             onNodeDrag={onNodeDragger()}
             onNodeDragStop={onNodeDragger()}
+            onElementClick={onElementClick}
             onNodeDoubleClick={onNodeDoubleClick}
             onElementsRemove={onElementsRemove}
             onEdgeUpdate={onEdgeUpdate}
             onLoad={onLoad}
           >
             <Background variant="dots" gap={CUBIT} size={1} />
-            <Controls />
             <MiniMap
               nodeStrokeColor={(n) => {
                 if (n.style?.background) return n.style.background;
@@ -341,8 +370,8 @@ function Workspace({ workspace, yArrWorkspace, me }) {
               nodeBorderRadius={2}
             />
           </ReactFlow>
-        </ReactFlowProvider>
-      </div>
+        </div>
+      </ReactFlowProvider>
     </div>
   );
 }
