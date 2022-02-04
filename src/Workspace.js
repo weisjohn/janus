@@ -6,8 +6,12 @@ import { proxy, useSnapshot } from "valtio";
 import Chance from "chance";
 import { v4 as uuidv4 } from "uuid";
 import cloneDeep from "lodash.clonedeep";
+import { animate } from "popmotion";
 
 import "./Workspace.css";
+
+// how long pans / zooms should be
+const FLOW_VIEW_ANIMATION = 250;
 
 const chance = Chance();
 
@@ -110,7 +114,9 @@ const AddNode = ({ workspace, me, flowRef }) => {
     <Button outlined intent="success" icon="add"
       onClick={() => {
         workspace.push(randomNode(me.name));
-        setTimeout(flowRef.current.fitView, 10)
+        setTimeout(() => {
+          flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
+        }, 10)
       }}
       text={`Add Node`}
     />
@@ -137,7 +143,17 @@ const Reset = ({ workspace, flowRef }) => {
       onClick={() => {
         workspace.splice(0, workspace.length);
         setTimeout(() => {
-          flowRef.current.setTransform({ x: 0, y: 0, zoom: 1.0 });
+          // get current view window to tween from
+          const { position: [x, y], zoom } = flowRef.current.toObject();
+
+          // https://popmotion.io/
+          animate({
+            from: { x: x, y: y, zoom },
+            to: { x: 0, y: 0, zoom: 1.0 },
+            onUpdate: ({ x, y, zoom }) => flowRef.current.setTransform({ x, y, zoom }),
+            duration: FLOW_VIEW_ANIMATION
+          });
+
         }, 10);
       }}
     />
@@ -165,13 +181,36 @@ const Genie = ({ workspace, me, flowRef }) => {
           const edge = randomEdge(workspace, me);
           if (edge) workspace.push(edge);
         }
-        // zoom in
-        setTimeout(flowRef.current.fitView, 10);
+        // zoom to fit
+        setTimeout(() => {
+          flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
+        }, 10);
       }}
     >
       <Icon color={ Colors.VIOLET1 } icon="clean" style={{ marginRight: "5px" }} />
       {"Genie"}
     </Button>
+  );
+}
+
+const Zoom = ({ icon, amount, flowRef }) => {
+  return (
+    <Button
+      outlined
+      onClick={() => {
+        // get current zoom to tween from
+        const { zoom } = flowRef.current.toObject();
+
+        // https://popmotion.io/
+        animate({
+          from: zoom ,
+          to: zoom * amount,
+          onUpdate: (nextZoom) => { flowRef.current.zoomTo(nextZoom); },
+          duration: FLOW_VIEW_ANIMATION
+        });
+      }}
+      icon={icon}
+    />
   );
 }
 
@@ -188,8 +227,6 @@ function Workspace({ workspace, yArrWorkspace, me }) {
   const onLoad = (reactFlowInstance) => {
     flowRef.current = reactFlowInstance;
   }
-
-
 
   // when double clicking an element, change its name
   const onNodeDoubleClick = (e, elem) => {
@@ -248,14 +285,6 @@ function Workspace({ workspace, yArrWorkspace, me }) {
     createConnection(newConnection);
   }
 
-  // TODO: determine if we can live valtio or if we need to bother w/ hooks
-  // const [elements, setElements] = useState(snap);
-  // useEffect(() => {
-  //   const copy = snap.map((e) => deepClone(e));
-  //   setElements(copy);
-  //   // debugger;
-  // }, [snap, setElements]);
-
   return (
     <div className="Workspace">
       <Navbar className="Workspace-navbar">
@@ -271,14 +300,10 @@ function Workspace({ workspace, yArrWorkspace, me }) {
         </Navbar.Group>
         <Navbar.Group align={Alignment.RIGHT}>
           <ButtonGroup>
+            <Zoom icon="zoom-in" amount={1.2} flowRef={flowRef} />
+            <Zoom icon="zoom-out" amount={1 / 1.2} flowRef={flowRef} />
             <Button outlined onClick={() => {
-              flowRef.current.zoomIn();
-            }} icon="zoom-in" />
-            <Button outlined onClick={() => {
-              flowRef.current.zoomOut();
-            }} icon="zoom-out" />
-            <Button outlined onClick={() => {
-              flowRef.current.fitView();
+              flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
             }} icon="zoom-to-fit" />
           </ButtonGroup>
         </Navbar.Group>
