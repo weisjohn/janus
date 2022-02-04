@@ -6,7 +6,7 @@ import ReactFlow, {
   ReactFlowProvider,
   useZoomPanHelper,
 } from "react-flow-renderer";
-import { Alignment, Button, ButtonGroup, Colors, Icon, Navbar } from "@blueprintjs/core";
+import { Alignment, Button, ButtonGroup, Colors, Divider, Icon, Navbar, Tag } from "@blueprintjs/core";
 import { proxy, useSnapshot } from "valtio";
 import Chance from "chance";
 import { v4 as uuidv4 } from "uuid";
@@ -193,8 +193,8 @@ const Genie = ({ workspace, me }) => {
           workspace.push(randomNode(me.name))
         }
         // add m random edges
-        const edges = chance.integer({ min: 3, max: 8 });
-        for (var i = 0; i < nodes; i++) {
+        const edges = chance.integer({ min: 1, max: nodes });
+        for (var j = 0; j < edges; j++) {
           const edge = randomEdge(workspace, me);
           if (edge) workspace.push(edge);
         }
@@ -458,6 +458,21 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             />
           </ReactFlow>
         </div>
+        <Navbar className="Workspace-navbar">
+          <Navbar.Group>
+            <Tag large minimal icon="data-lineage">
+              Nodes: {
+                snap.filter(e => e.data).length
+              }
+            </Tag>
+            <Navbar.Divider />
+            <Tag large minimal icon="one-to-one">
+              Edges: {
+                snap.filter(e => !e.data).length
+              }
+            </Tag>
+          </Navbar.Group>
+        </Navbar>
       </ReactFlowProvider>
     </div>
   );
