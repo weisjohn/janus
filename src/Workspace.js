@@ -5,6 +5,8 @@ import ReactFlow, {
   MiniMap,
   ReactFlowProvider,
   useZoomPanHelper,
+  isNode,
+  useStoreState,
 } from "react-flow-renderer";
 import { Alignment, Button, ButtonGroup, Colors, Divider, Icon, Navbar, Tag } from "@blueprintjs/core";
 import { proxy, useSnapshot } from "valtio";
@@ -12,6 +14,7 @@ import Chance from "chance";
 import { v4 as uuidv4 } from "uuid";
 import cloneDeep from "lodash.clonedeep";
 import { animate } from "popmotion";
+import dagre from "dagre";
 
 import "./Workspace.css";
 
@@ -121,14 +124,14 @@ const AddNode = ({ workspace, me }) => {
   // debugger;
   const { fitView } = useZoomPanHelper();
   return (
-    <Button outlined intent="success" icon="add"
+    <Button outlined intent="success" icon="duplicate"
       onClick={() => {
         workspace.push(randomNode(me.name));
         setTimeout(() => {
           fitView({ duration: FLOW_VIEW_ANIMATION });
         }, 10)
       }}
-      text={`Add Node`}
+      text={`Node`}
     />
   );
 };
@@ -142,7 +145,7 @@ const AddEdge = ({ workspace, me }) => {
         const edge = randomEdge(workspace, me);
         if (edge) workspace.push(edge);
       }}
-      text={`Add Edge`}
+      text={`Edge`}
     />
   );
 };
@@ -210,6 +213,81 @@ const Genie = ({ workspace, me }) => {
   );
 }
 
+// shamelessly stolen from https://reactflow.dev/examples/layouting/
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+// In order to keep this example simple the node width and height are hardcoded.
+// In a real world app you would use the correct width and height values of
+// const nodes = useStoreState(state => state.nodes) and then node.__rf.width, node.__rf.height
+
+const nodeWidth = 172;
+const nodeHeight = 36;
+
+const getLayoutedElements = (elements, direction = "TB") => {
+  const isHorizontal = direction === "LR";
+  dagreGraph.setGraph({ rankdir: direction });
+
+  elements.forEach((el) => {
+    if (isNode(el)) {
+      dagreGraph.setNode(el.id, { width: nodeWidth, height: nodeHeight });
+    } else {
+      dagreGraph.setEdge(el.source, el.target);
+    }
+  });
+
+  dagre.layout(dagreGraph);
+
+  return elements.map((el) => {
+    if (isNode(el)) {
+      const nodeWithPosition = dagreGraph.node(el.id);
+      el.targetPosition = isHorizontal ? "left" : "top";
+      el.sourcePosition = isHorizontal ? "right" : "bottom";
+
+      // unfortunately we need this little hack to pass a slightly different position
+      // to notify react flow about the change. Moreover we are shifting the dagre node position
+      // (anchor=center center) to the top left so it matches the react flow node anchor point (top left).
+      el.position = {
+        x: nodeWithPosition.x - nodeWidth / 2 + Math.random() / 1000,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      };
+    }
+
+    return el;
+  });
+};
+
+
+const HierarchyLayoutButton = ({ workspace, me, graph, rotate }) => {
+  const { fitView } = useZoomPanHelper();
+  return (
+    <Button
+      outlined
+      style={{
+        borderColor: Colors.VERMILION1,
+        color: Colors.VERMILION1,
+        paddingLeft: "1rem",
+      }}
+      onClick={() => {
+        // if I can do this, then does all the slice algorithm stuff get better?
+        workspace = getLayoutedElements(workspace, graph);
+        setTimeout(() => {
+          fitView({ duration: FLOW_VIEW_ANIMATION });
+        }, 10);
+      }}
+    >
+      <Icon
+        color={Colors.VERMILION1}
+        icon="layout-hierarchy"
+        style={{
+          transform: `rotate(${rotate}deg)`,
+          marginRight: "0px", // this is weird but necessary
+        }}
+      />
+    </Button>
+  );
+}
+
 const ZoomIn = () => {
   const { zoomIn } = useZoomPanHelper();
   return (
@@ -249,6 +327,46 @@ const ZoomToFit = () => {
   );
 }
 
+const Number = ({ width, value }) => {
+  return (
+    <span 
+      class="Workspace-Number"
+      style={{
+        width: `${width * 16}px`
+      }}
+    >
+      {value}
+    </span>
+  )
+}
+
+const Positioning = () => {
+  // meta for footer
+  const transform = useStoreState((store) => store.transform);
+  const x = transform[0].toFixed(1);
+  const y = transform[1].toFixed(1);
+  const zoom = transform[2].toFixed(2);
+
+  return (
+    <>
+      <Tag large minimal icon="widget">
+        {`X: `}
+        <Number width="4" value={x} />
+      </Tag>
+      <Navbar.Divider />
+      <Tag large minimal icon="widget">
+        {`Y: `}
+        <Number width="4" value={y} />
+      </Tag>
+      <Navbar.Divider />
+      <Tag large minimal icon="eye-open">
+        {`Zoom: `}
+        <Number width="3" value={zoom} />
+      </Tag>
+    </>
+  );
+}
+
 // use this as a state things
 const local = proxy({ element: null });
 
@@ -259,6 +377,9 @@ function Workspace({ workspace, yArrWorkspace, me }) {
   const flowRef = useRef(null);
   const onLoad = (reactFlowInstance) => {
     flowRef.current = reactFlowInstance;
+    setTimeout(() => {
+      flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
+    }, 0)
   };
 
   const modifyWorkspaceElement = (elem, fn) => {
@@ -296,6 +417,7 @@ function Workspace({ workspace, yArrWorkspace, me }) {
   }
 
   const focusNode = (elem) => {
+    // TODO: could maybe use isNode() - https://reactflow.dev/docs/api/helper-functions/
     // don't focus on non nodes
     if (!elem.data) return;
 
@@ -398,7 +520,7 @@ function Workspace({ workspace, yArrWorkspace, me }) {
     <div className="Workspace">
       <ReactFlowProvider>
         <Navbar className="Workspace-navbar">
-          <Navbar.Group align={Alignment.Left}>
+          <Navbar.Group align={Alignment.LEFT}>
             <Reset workspace={workspace} flowRef={flowRef} />
             <Navbar.Divider />
             <ButtonGroup>
@@ -407,6 +529,13 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             </ButtonGroup>
             <Navbar.Divider />
             <Genie workspace={workspace} me={me} />
+            <Navbar.Divider />
+            <ButtonGroup>
+              <HierarchyLayoutButton workspace={workspace} me={me} graph="TB" rotate={0} />
+              <HierarchyLayoutButton workspace={workspace} me={me} graph="LR" rotate={270} />
+              <HierarchyLayoutButton workspace={workspace} me={me} graph="BT" rotate={180} />
+              <HierarchyLayoutButton workspace={workspace} me={me} graph="RL" rotate={90} />
+            </ButtonGroup>
           </Navbar.Group>
           <Navbar.Group align={Alignment.RIGHT}>
             <ButtonGroup>
@@ -459,18 +588,19 @@ function Workspace({ workspace, yArrWorkspace, me }) {
           </ReactFlow>
         </div>
         <Navbar className="Workspace-navbar">
-          <Navbar.Group>
+          <Navbar.Group align={Alignment.LEFT}>
             <Tag large minimal icon="data-lineage">
-              Nodes: {
-                snap.filter(e => e.data).length
-              }
+              {`Nodes: `}
+              <Number width={2} value={snap.filter((e) => e.data).length} />
             </Tag>
             <Navbar.Divider />
             <Tag large minimal icon="one-to-one">
-              Edges: {
-                snap.filter(e => !e.data).length
-              }
+              {`Edges: `}
+              <Number width={2} value={snap.filter((e) => !e.data).length} />
             </Tag>
+          </Navbar.Group>
+          <Navbar.Group align={Alignment.RIGHT}>
+            <Positioning />
           </Navbar.Group>
         </Navbar>
       </ReactFlowProvider>
