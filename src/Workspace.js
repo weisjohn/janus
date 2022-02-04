@@ -129,15 +129,10 @@ const randomEdge = (permutations, author) => {
 
 // add a random node to the design
 const AddNode = ({ workspace, me }) => {
-  // debugger;
-  const { fitView } = useZoomPanHelper();
   return (
     <Button outlined intent="success" icon="duplicate"
       onClick={() => {
         workspace.push(randomNode(me.name));
-        setTimeout(() => {
-          fitView({ duration: FLOW_VIEW_ANIMATION });
-        }, 10)
       }}
       text={`Node`}
     />
@@ -222,18 +217,19 @@ const Genie = ({ workspace, me }) => {
   );
 }
 
-// shamelessly stolen from https://reactflow.dev/examples/layouting/
-const dagreGraph = new dagre.graphlib.Graph();
-dagreGraph.setDefaultEdgeLabel(() => ({}));
-
-// In order to keep this example simple the node width and height are hardcoded.
-// In a real world app you would use the correct width and height values of
-// const nodes = useStoreState(state => state.nodes) and then node.__rf.width, node.__rf.height
-
-const nodeWidth = 172;
-const nodeHeight = 36;
-
 const getLayoutedElements = (elements, direction = "TB") => {
+  
+  // shamelessly stolen from https://reactflow.dev/examples/layouting/
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  
+  // In order to keep this example simple the node width and height are hardcoded.
+  // In a real world app you would use the correct width and height values of
+  // const nodes = useStoreState(state => state.nodes) and then node.__rf.width, node.__rf.height
+  
+  const nodeWidth = 172;
+  const nodeHeight = 36;
+
   const isHorizontal = direction === "LR";
   dagreGraph.setGraph({ rankdir: direction });
 
@@ -339,9 +335,9 @@ const ZoomToFit = () => {
 const Number = ({ width, value }) => {
   return (
     <span 
-      class="Workspace-Number"
+      className="Workspace-Number"
       style={{
-        width: `${width * 16}px`
+        width: `${width * 10}px`
       }}
     >
       {value}
@@ -360,24 +356,24 @@ const Positioning = () => {
     <>
       <Tag large minimal icon="widget">
         {`X: `}
-        <Number width="4" value={x} />
+        <Number width="6" value={x} />
       </Tag>
       <Navbar.Divider />
       <Tag large minimal icon="widget">
         {`Y: `}
-        <Number width="4" value={y} />
+        <Number width="6" value={y} />
       </Tag>
       <Navbar.Divider />
       <Tag large minimal icon="eye-open">
         {`Zoom: `}
-        <Number width="3" value={zoom} />
+        <Number width="4" value={zoom} />
       </Tag>
     </>
   );
 }
 
 // use this as a state things
-const local = proxy({ element: null });
+const local = proxy({ element: null, subscribed: false });
 
 function Workspace({ workspace, yArrWorkspace, me }) {
   const snap = useSnapshot(workspace);
@@ -390,6 +386,18 @@ function Workspace({ workspace, yArrWorkspace, me }) {
       flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
     }, 0)
   };
+
+  // on array mutation events, resize
+  if (!local.subscribed) {
+    console.log("subscribe to yArrWorkspace");
+    yArrWorkspace.observe((e) => {
+      console.log("observe")
+      setTimeout(() => {
+        flowRef.current.fitView({ duration: FLOW_VIEW_ANIMATION });
+      }, 100);
+    });
+    local.subscribed = true;
+  }
 
   const modifyWorkspaceElement = (elem, fn) => {
     // create a new copy of the element, as react-flow needs it
@@ -600,12 +608,12 @@ function Workspace({ workspace, yArrWorkspace, me }) {
           <Navbar.Group align={Alignment.LEFT}>
             <Tag large minimal icon="data-lineage">
               {`Nodes: `}
-              <Number width={2} value={snap.filter((e) => e.data).length} />
+              <Number width={3} value={snap.filter((e) => e.data).length} />
             </Tag>
             <Navbar.Divider />
             <Tag large minimal icon="one-to-one">
               {`Edges: `}
-              <Number width={2} value={snap.filter((e) => !e.data).length} />
+              <Number width={3} value={snap.filter((e) => !e.data).length} />
             </Tag>
           </Navbar.Group>
           <Navbar.Group align={Alignment.RIGHT}>
