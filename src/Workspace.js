@@ -1,6 +1,11 @@
 
 import { useRef } from "react";
-import ReactFlow, { Background, MiniMap, ReactFlowProvider, useZoomPanHelper } from "react-flow-renderer";
+import ReactFlow, {
+  Background,
+  MiniMap,
+  ReactFlowProvider,
+  useZoomPanHelper,
+} from "react-flow-renderer";
 import { Alignment, Button, ButtonGroup, Colors, Icon, Navbar } from "@blueprintjs/core";
 import { proxy, useSnapshot } from "valtio";
 import Chance from "chance";
@@ -9,6 +14,9 @@ import cloneDeep from "lodash.clonedeep";
 import { animate } from "popmotion";
 
 import "./Workspace.css";
+
+// our custom nodes
+import { CustomInputNode, CustomDefaultNode, CustomOutputNode } from "./Nodes";
 
 // how long pans / zooms should be
 const FLOW_VIEW_ANIMATION = 250;
@@ -110,6 +118,7 @@ const randomEdge = (workspace, author) => {
 
 // add a random node to the design
 const AddNode = ({ workspace, me }) => {
+  // debugger;
   const { fitView } = useZoomPanHelper();
   return (
     <Button outlined intent="success" icon="add"
@@ -244,28 +253,20 @@ const ZoomToFit = () => {
 const local = proxy({ element: null });
 
 function Workspace({ workspace, yArrWorkspace, me }) {
-
   const snap = useSnapshot(workspace);
 
   // https://reactflow.dev/docs/api/react-flow-instance/
   const flowRef = useRef(null);
   const onLoad = (reactFlowInstance) => {
     flowRef.current = reactFlowInstance;
-  }
-
-  // mark awareness on an item
-  const onElementClick = (e, elem) => {
-    // TODO: mark that element as being focused by someone
-    // debugger;
   };
 
-  // when double clicking an element, change its name
-  const onNodeDoubleClick = (e, elem) => {
+  const modifyWorkspaceElement = (elem, fn) => {
     // create a new copy of the element, as react-flow needs it
     const changed = cloneDeep(elem);
 
-    // change the label just to show it being updated
-    changed.data.label = randomNodeName();
+    // do the function
+    fn(changed);
 
     // find the index of the item to splice into
     let idx = workspace.findIndex((item) => item.id === elem.id);
@@ -274,14 +275,91 @@ function Workspace({ workspace, yArrWorkspace, me }) {
     workspace.splice(idx, 1, changed);
   }
 
+  // blur a single element
+  const blurElement = (elem) => {
+    modifyWorkspaceElement(elem, (changed) => {
+      // find the index of the item to splice into
+      let idx = changed.data.cursors.findIndex((c) => c.uuid === me.uuid);
+      // remove this item from the array
+      changed.data.cursors.splice(idx, 1);
+    });
+  }
+
+  // find the index of the item to remove focus
+  const blurElements = (except) => {
+    console.log("blurElements")
+    // all those elements focused by me
+    const focused = workspace.filter(item => item.id !== except).filter((item) => {
+      return item.data && item.data.cursors && item.data.cursors.find(c => c.uuid === me.uuid)
+    });
+    focused.forEach(blurElement);
+  }
+
+  const focusNode = (elem) => {
+    // don't focus on non nodes
+    if (!elem.data) return;
+
+    // if i already have a cursor on this item, bail
+    if (elem.data.cursors && elem.data.cursors.find((c) => c.uuid === me.uuid)) {
+      console.log('focus bail')
+      return true;
+    }
+
+    // mark that element as being focused by me
+    modifyWorkspaceElement(elem, (changed) => {
+      // if that object doesn't have cursors
+      if (!changed.data.cursors) changed.data.cursors = [];
+      // add me to list of cursors
+      changed.data.cursors.push(me);
+    });
+  }
+
+  // mark awareness on an item
+  const onElementClick = (e, elem) => {
+    // if someone wasn't holding down the multiselect key, don't allow it
+    if (!e.metaKey) blurElements(elem.id);
+
+    focusNode(elem);
+    // console.log('onElementClick')
+  };
+
+  const onNodeDragStart = (e, node) => {
+    focusNode(node);
+    // console.log("onNodeDragStart");
+  }
+  
+  const onNodeDragStop = (e, node) => {
+    blurElement(node);
+    // console.log("onNodeDragStop");
+  }
+
+  // wire up onPanelClick
+  const onPaneClick = (e, elem) => {
+    blurElements();
+  };
+
+  // when double clicking an element, change its name
+  const onNodeDoubleClick = (e, elem) => {
+    modifyWorkspaceElement(elem, (changed) => {
+      changed.data.label = randomNodeName();
+    });
+  };
+
+  // place cursors on multiple items
+  const onSelectionChange = (elements) => {
+    if (!elements) return blurElements();
+    elements.forEach(focusNode);
+    // debugger;
+  };
+
   // handle connection made
   const createConnection = (params) => {
-    workspace.push({ 
+    workspace.push({
       id: uuidv4(),
       source: params.source,
       target: params.target,
-      type: "smoothstep", 
-      arrowHeadType: 'arrowclosed' 
+      type: "smoothstep",
+      arrowHeadType: "arrowclosed",
     });
   };
 
@@ -297,24 +375,24 @@ function Workspace({ workspace, yArrWorkspace, me }) {
   // handles removing multiple items from tool
   const onElementsRemove = (elements) => {
     elements.forEach(removeElement);
-  }
+  };
 
   // function generator to allow nodes to be moved
   const onNodeDragger = () => {
     return (event, node) => {
-      workspace.forEach(i => {
+      workspace.forEach((i) => {
         if (i.id === node.id) {
           i.position = node.position;
         }
-      })
-    }
-  }
+      });
+    };
+  };
 
   // simple composition of two helpers
   const onEdgeUpdate = (oldEdge, newConnection) => {
     removeElement(oldEdge);
     createConnection(newConnection);
-  }
+  };
 
   return (
     <div className="Workspace">
@@ -340,14 +418,22 @@ function Workspace({ workspace, yArrWorkspace, me }) {
         </Navbar>
         <div className="Workspace-flow">
           <ReactFlow
+            nodeTypes={{
+              input: CustomInputNode,
+              default: CustomDefaultNode,
+              output: CustomOutputNode,
+            }}
             elements={snap}
             snapToGrid
             snapGrid={[CUBIT, CUBIT]}
             onConnect={createConnection}
+            onNodeDragStart={onNodeDragStart}
             onNodeDrag={onNodeDragger()}
-            onNodeDragStop={onNodeDragger()}
+            onNodeDragStop={onNodeDragStop}
             onElementClick={onElementClick}
             onNodeDoubleClick={onNodeDoubleClick}
+            onSelectionChange={onSelectionChange}
+            onPaneClick={onPaneClick}
             onElementsRemove={onElementsRemove}
             onEdgeUpdate={onEdgeUpdate}
             onLoad={onLoad}
