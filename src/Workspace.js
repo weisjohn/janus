@@ -432,7 +432,8 @@ function Workspace({ workspace, yArrWorkspace, me }) {
             onNodeDragStop={onNodeDragStop}
             onElementClick={onElementClick}
             onNodeDoubleClick={onNodeDoubleClick}
-            onSelectionChange={onSelectionChange}
+            // TODO: this introduces a really weird bug
+            // onSelectionChange={onSelectionChange}
             onPaneClick={onPaneClick}
             onElementsRemove={onElementsRemove}
             onEdgeUpdate={onEdgeUpdate}
