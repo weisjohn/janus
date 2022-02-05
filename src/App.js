@@ -16,17 +16,18 @@ import Header from "./Header";
 import Editor from "./Editor";
 import Markdown from "./Markdown";
 import DataArray from "./DataArray";
+import Workspace from "./Workspace";
 import User from "./util/user";
 
 const ydoc = new Y.Doc();
-const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo-3", ydoc);
+const websocketProvider = new WebsocketProvider("wss://demos.yjs.dev", "janus-demo-5", ydoc);
 const { awareness } = websocketProvider;
 
 const user = User();
 awareness.setLocalStateField("user", user);
 
 // local state is instance, shared is all instances
-const local = proxy({ generate: false, connected: null, user, roommates: [], synced: false, tab: 'editor' });
+const local = proxy({ generate: false, connected: null, user, roommates: [], synced: false, tab: 'workspace' });
 
 const shared = proxy({ dataobject: {} });
 const ymap = ydoc.getMap("system.v1");
@@ -58,6 +59,12 @@ ydoc.on('update', (update, origin, doc) => {
 const dataitems = proxy([]);
 const yarray = ydoc.getArray("dataitems.v3");
 bindProxyAndYArray(dataitems, yarray);
+
+// shared state for workspace
+const workspace = proxy([]);
+const yArrWorkspace = ydoc.getArray("workspace.v3");
+bindProxyAndYArray(workspace, yArrWorkspace);
+
 
 // when an awareness event happens, update list of roommates
 function refreshAwareness() {
@@ -116,6 +123,11 @@ const App = () => {
         onChange={(newTabId) => { local.tab = newTabId; }}
         selectedTabId={snap.tab}
       >
+        <Tab
+          id="workspace"
+          title="Workspace"
+          panel={<Workspace workspace={workspace} yArrWorkspace={yArrWorkspace} me={user} />}
+        />
         <Tab
           id="dataarray"
           title="DataArray"

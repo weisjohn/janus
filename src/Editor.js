@@ -1,5 +1,5 @@
-import { useRef } from "react";
 
+import { useRef } from "react";
 import { Alignment, Button, Navbar } from "@blueprintjs/core";
 import Monaco from "@monaco-editor/react";
 import { MonacoBinding } from "y-monaco";
@@ -74,7 +74,7 @@ function Editor({ awareness, ytext, me }) {
               ytext.delete(0, ytext.length);
               ytext.insert(0, Text());
             }}
-            text="Reset"
+            text="Init"
           />
         </Navbar.Group>
       </Navbar>

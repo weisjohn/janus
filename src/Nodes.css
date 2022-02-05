@@ -1,0 +1,22 @@
+
+/* inspired by the Editor.css yRemoteSelection::after presence indicators */
+.node-presence {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  width: 0px;
+  text-align: left;
+}
+
+.node-presence-cell {
+  border-width: 3px;
+  border-style: solid;
+  border-radius: 4px;
+  color: white;
+  padding: 0px 2px;
+  margin-right: 4px;
+  
+  /* these two need to be set on the element directly, for example */
+  /* border-color: rebeccapurple; */
+  /* background: rebeccapurple; */
+}
