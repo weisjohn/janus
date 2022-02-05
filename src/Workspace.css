@@ -21,3 +21,9 @@
   font-size: 16px;
   display: inline-block;
 }
+
+.Workspace .react-flow__node-default, 
+.Workspace .react-flow__node-input, 
+.Workspace .react-flow__node-output {
+  width: 100px;
+}
